@@ -1,0 +1,17 @@
+{
+  "name": "auto-git",
+  "version": "1.0.0",
+  "description": "Automatically create branches, commit, and push for a date range",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["git", "automation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "simple-git": "^3.20.0"
+  }
+}
+
