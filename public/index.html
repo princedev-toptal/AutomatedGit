@@ -1001,7 +1001,7 @@
                 <div class="results" id="results"></div>
             </div>
             <div class="step-navigation">
-                <div></div>
+                <button type="button" id="settingsBackBtn" class="btn-back">← Back to Help</button>
                 <button type="button" id="nextBtn" class="btn-next">Next: Review Settings →</button>
             </div>
         </div>
@@ -1344,6 +1344,14 @@
                 nextBtn.disabled = false;
             }
         });
+
+        // Settings back button handler (Step 1 -> Step 0)
+        const settingsBackBtn = document.getElementById('settingsBackBtn');
+        if (settingsBackBtn) {
+            settingsBackBtn.addEventListener('click', () => {
+                showStep(0);
+            });
+        }
 
         // Back button handler (Step 2 -> Step 1)
         backBtn.addEventListener('click', () => {
