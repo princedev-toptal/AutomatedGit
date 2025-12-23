@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "Automatically create branches, commit, and push for a date range",
   "main": "server.js",
+  "engines": {
+    "node": ">=14.x"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "echo 'No build step required'"
   },
   "keywords": ["git", "automation"],
   "author": "",
