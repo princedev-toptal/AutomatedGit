@@ -2,20 +2,88 @@
   "name": "auto-git",
   "version": "1.0.0",
   "description": "Automatically create branches, commit, and push for a date range",
-  "main": "server.js",
+  "main": "main.js",
   "engines": {
     "node": ">=14.x"
   },
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'No build step required'"
+    "electron": "cross-env ELECTRON=1 electron .",
+    "electron:dev": "cross-env NODE_ENV=development ELECTRON=1 electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never"
   },
-  "keywords": ["git", "automation"],
+  "keywords": [
+    "git",
+    "automation",
+    "electron",
+    "desktop"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "simple-git": "^3.20.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.autogit.app",
+    "productName": "Auto Git",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "server.js",
+      "dateUtils.js",
+      "gitOperations.js",
+      "prOperations.js",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "signDlls": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "AutoGit-${version}-portable.exe"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   }
 }
-

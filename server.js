@@ -13,7 +13,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+
+// Handle static files for both development and packaged (pkg) environments
+// pkg bundles files into the executable, so __dirname points to the snapshot directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the main page
 app.get('/', (req, res) => {
@@ -990,8 +993,8 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Start server (only if not in Vercel serverless environment)
-if (process.env.VERCEL !== '1') {
+// Start server (only if not in Vercel serverless environment and not in Electron)
+if (process.env.VERCEL !== '1' && process.env.ELECTRON !== '1') {
   app.listen(PORT, () => {
     console.log(`========================================`);
     console.log(`Auto-Git server running at http://localhost:${PORT}`);
@@ -1002,6 +1005,6 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
-// Export for Vercel serverless
+// Export for Vercel serverless and Electron
 module.exports = app;
 
