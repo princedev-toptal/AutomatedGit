@@ -862,63 +862,141 @@
         <!-- Step 0: Help -->
         <div class="step-content help active" id="helpStep">
             <div class="help-section">
-                <h2>📚 Welcome to Auto Git</h2>
-                <p style="font-size: 16px; color: #586069; margin-bottom: 30px;">
-                    Automatically create branches, commits, and push for a date range while excluding Sundays and holidays.
+                <h2>🚀 Welcome to Auto Git</h2>
+                <p style="font-size: 18px; color: #24292e; margin-bottom: 30px; font-weight: 500;">
+                    Automatically generate Git branches, commits, and pull requests for any date range — perfect for creating realistic contribution histories, testing workflows, or populating repositories.
                 </p>
 
+                <!-- What Problem Does This Solve? -->
+                <div class="help-info-box" style="background: #fff1f2; border-left-color: #cf222e;">
+                    <h3>❓ What Problem Does This Solve?</h3>
+                    <p style="margin-bottom: 12px; color: #24292e;">
+                        <strong>Ever needed to create multiple Git branches and commits across different dates?</strong> Whether you're:
+                    </p>
+                    <ul style="margin-bottom: 0;">
+                        <li><strong>Testing Git workflows</strong> — Need realistic commit histories to test CI/CD pipelines, branch protection rules, or merge strategies?</li>
+                        <li><strong>Creating sample repositories</strong> — Building demo repos with contribution activity for tutorials or documentation?</li>
+                        <li><strong>Populating empty repositories</strong> — Want to add realistic commit history to a new project?</li>
+                        <li><strong>Generating test data</strong> — Need multiple branches with commits for testing repository tools or scripts?</li>
+                    </ul>
+                    <p style="margin-top: 12px; margin-bottom: 0; color: #24292e;">
+                        <strong>Auto Git automates all of this.</strong> Instead of manually creating branches, making commits, and pushing them one by one, you configure once and let it handle everything automatically.
+                    </p>
+                </div>
+
+                <!-- Why Use Auto Git? -->
+                <div class="help-info-box" style="background: #e7f3ff; border-left-color: #0969da;">
+                    <h3>✨ Why Use Auto Git?</h3>
+                    <ul style="margin-bottom: 0;">
+                        <li><strong>Time-saving:</strong> Create hundreds of branches and commits in minutes, not hours</li>
+                        <li><strong>Realistic dates:</strong> Automatically excludes Sundays and holidays based on your country</li>
+                        <li><strong>Flexible:</strong> Control how many branches, commits, and even add co-authors</li>
+                        <li><strong>Complete automation:</strong> Creates branches, commits, pushes, and optionally creates/merges PRs</li>
+                        <li><strong>No manual Git commands:</strong> Everything happens through a simple web interface</li>
+                    </ul>
+                </div>
+
+                <!-- Example Use Case -->
+                <div class="help-info-box" style="background: #f0fff4; border-left-color: #1a7f37;">
+                    <h3>📋 Example Use Case</h3>
+                    <p style="margin-bottom: 12px; color: #24292e;">
+                        <strong>Scenario:</strong> You want to create a realistic contribution history for January 2024 with 2 branches per day and 10 commits total, excluding weekends and US holidays.
+                    </p>
+                    <p style="margin-bottom: 12px; color: #24292e;">
+                        <strong>What Auto Git does:</strong>
+                    </p>
+                    <ol style="margin-bottom: 0;">
+                        <li>Calculates all valid dates (excludes Sundays and US holidays like New Year's Day, MLK Day, etc.)</li>
+                        <li>For each valid date (e.g., Jan 2, Jan 3, Jan 4...), creates 2 branches: <code>auto-2024-01-02-1</code> and <code>auto-2024-01-02-2</code></li>
+                        <li>Distributes 10 commits randomly across those branches</li>
+                        <li>Pushes all branches to your remote repository</li>
+                        <li>Optionally creates Pull Requests for each branch and merges them automatically</li>
+                    </ol>
+                    <p style="margin-top: 12px; margin-bottom: 0; color: #24292e; font-weight: 500;">
+                        <strong>Result:</strong> In minutes, you have a repository with realistic commit activity across multiple branches, ready for testing or demonstration.
+                    </p>
+                </div>
+
+                <!-- How It Works -->
+                <div class="help-info-box" style="background: #fffbf0; border-left-color: #f59e0b;">
+                    <h3>⚙️ How It Works</h3>
+                    <p style="margin-bottom: 12px; color: #24292e;">
+                        Auto Git follows this workflow:
+                    </p>
+                    <ol style="margin-bottom: 0;">
+                        <li><strong>Date Calculation:</strong> Takes your start/end date range and filters out Sundays and country-specific holidays</li>
+                        <li><strong>Branch Creation:</strong> For each valid date, creates the specified number of branches (e.g., <code>auto-YYYY-MM-DD-1</code>, <code>auto-YYYY-MM-DD-2</code>)</li>
+                        <li><strong>Commit Generation:</strong> Distributes commits across branches, backdating them to the correct dates</li>
+                        <li><strong>Co-Authors (Optional):</strong> Randomly adds co-authors to commits based on your specified rate</li>
+                        <li><strong>Push to Remote:</strong> Pushes all branches to your Git remote repository</li>
+                        <li><strong>Pull Requests (Optional):</strong> Creates and optionally auto-merges PRs for each branch</li>
+                    </ol>
+                </div>
+
+                <!-- Feature Overview -->
+                <h3 style="margin-top: 40px; margin-bottom: 20px; color: #24292e; font-size: 20px;">🎯 Key Features</h3>
                 <div class="help-grid">
                     <div class="help-card">
                         <div class="help-icon">📅</div>
-                        <h3>Date Range</h3>
-                        <p>Select your start and end dates. The app will automatically exclude Sundays and country-specific holidays.</p>
-                    </div>
-
-                    <div class="help-card">
-                        <div class="help-icon">🌍</div>
-                        <h3>Country Selection</h3>
-                        <p>Choose your country to exclude its specific holidays. Supports 35+ countries with their national holidays.</p>
+                        <h3>Smart Date Handling</h3>
+                        <p>Automatically excludes Sundays and 35+ countries' holidays. Just select your country and date range.</p>
                     </div>
 
                     <div class="help-card">
                         <div class="help-icon">🌿</div>
-                        <h3>Branches & Commits</h3>
-                        <p>Specify how many branches to create and total commits. Commits are randomly distributed across branches.</p>
+                        <h3>Flexible Branch & Commit Control</h3>
+                        <p>Set how many branches per date and total commits. Commits are randomly distributed for realistic patterns.</p>
                     </div>
 
                     <div class="help-card">
-                        <div class="help-icon">📁</div>
-                        <h3>Repository</h3>
-                        <p>Provide a local path or GitHub URL. The app will clone or initialize the repository automatically.</p>
+                        <div class="help-icon">👥</div>
+                        <h3>Co-Author Support</h3>
+                        <p>Add co-authors to commits with configurable rate. Perfect for simulating team collaboration.</p>
                     </div>
 
                     <div class="help-card">
                         <div class="help-icon">🔀</div>
-                        <h3>Pull Requests</h3>
-                        <p>Optionally create and auto-merge pull requests. Requires a GitHub Personal Access Token with <code>repo</code> scope.</p>
+                        <h3>Pull Request Automation</h3>
+                        <p>Optionally create and auto-merge PRs. Great for testing PR workflows and CI/CD pipelines.</p>
+                    </div>
+
+                    <div class="help-card">
+                        <div class="help-icon">📁</div>
+                        <h3>Repository Management</h3>
+                        <p>Works with local paths or GitHub URLs. Automatically clones or initializes repositories as needed.</p>
+                    </div>
+
+                    <div class="help-card">
+                        <div class="help-icon">📊</div>
+                        <h3>Real-Time Progress</h3>
+                        <p>Watch progress in real-time with detailed console output. See exactly what's happening at each step.</p>
                     </div>
                 </div>
 
-                <div class="help-info-box">
+                <!-- Quick Tips -->
+                <div class="help-info-box" style="margin-top: 30px;">
                     <h3>💡 Quick Tips</h3>
                     <ul>
-                        <li>Make sure you have Git configured on your system</li>
-                        <li>For PR creation, you'll need a GitHub Personal Access Token</li>
-                        <li>Required token scopes: <code>repo</code> (for PRs), <code>user:follow</code> and <code>public_repo</code> (for auto-follow/star)</li>
-                        <li>The repository will be created/initialized if it doesn't exist</li>
-                        <li>You need to add a remote repository before pushing (e.g., <code>git remote add origin &lt;url&gt;</code>)</li>
+                        <li>Make sure you have <strong>Git configured</strong> on your system (<code>git config --global user.name</code> and <code>git config --global user.email</code>)</li>
+                        <li>For PR creation, you'll need a <strong>GitHub Personal Access Token</strong> with <code>repo</code> scope</li>
+                        <li>For auto-follow/star features, token needs <code>user:follow</code> and <code>public_repo</code> scopes</li>
+                        <li>The repository will be <strong>created/initialized automatically</strong> if it doesn't exist</li>
+                        <li>Provide a <strong>remote URL</strong> (e.g., <code>https://github.com/username/repo.git</code>) for pushing</li>
                     </ul>
                 </div>
 
-                <div class="help-info-box" style="background: #e7f3ff; border-left-color: #0969da;">
-                    <h3>🚀 Getting Started</h3>
-                    <ol>
-                        <li>Fill in the date range and select your country</li>
-                        <li>Set the number of branches and total commits</li>
-                        <li>Enter your repository path or GitHub URL</li>
-                        <li>Optionally enable PR creation and provide a token</li>
-                        <li>Click "Next" to review your settings</li>
-                        <li>Confirm and watch the magic happen! ✨</li>
+                <!-- Getting Started -->
+                <div class="help-info-box" style="background: #e7f3ff; border-left-color: #0969da; margin-top: 20px;">
+                    <h3>🚀 Ready to Get Started?</h3>
+                    <p style="margin-bottom: 12px; color: #24292e;">
+                        Click the button below to configure your settings. The process is simple:
+                    </p>
+                    <ol style="margin-bottom: 0;">
+                        <li>Set your date range and country</li>
+                        <li>Configure branches and commits</li>
+                        <li>Enter your repository information</li>
+                        <li>Review and confirm</li>
+                        <li>Watch it work! ✨</li>
                     </ol>
                 </div>
             </div>
