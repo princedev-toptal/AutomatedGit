@@ -1,55 +1,114 @@
 # Auto Git
 
-Automatically create branches, commit, and push for a date range while excluding Sundays and holidays.
+Automatically create branches, commit, and push for a date range while excluding Sundays and holidays. Available as both a **web application** and **desktop application** (Windows, macOS, Linux).
 
-## Features
+## 🚀 Features
 
-- ✅ Automatically creates branches for each valid date
-- ✅ Creates specified number of commits per date
-- ✅ Pushes branches to remote repository
-- ✅ Excludes Sundays and country-specific holidays
-- ✅ Supports multiple countries (US, UK, Canada, Australia, Germany, France, Japan, India, Brazil, Mexico)
-- ✅ Simple web-based user interface
-- ✅ Real-time progress tracking
+- ✅ **Automatically creates branches** for each valid date
+- ✅ **Creates specified number of commits** per date
+- ✅ **Pushes branches to remote repository**
+- ✅ **Excludes Sundays and country-specific holidays** (35+ countries supported)
+- ✅ **Co-author support** - Add co-authors to commits with configurable rate
+- ✅ **Auto-follow & star** - Automatically follow GitHub users and star repositories
+- ✅ **Pull Request creation** - Optionally create and merge PRs automatically
+- ✅ **Real-time progress tracking** with Server-Sent Events (SSE)
+- ✅ **Desktop application** - Standalone .exe/.dmg/.AppImage (no Node.js required!)
+- ✅ **Web interface** - Simple, intuitive UI
+- ✅ **Multiple branches** - Create multiple branches per date with configurable commits
 
-## Installation
+## 📦 Installation
 
-1. Install dependencies:
+### Option 1: Desktop Application (Recommended)
+
+**For End Users:**
+1. Download the latest release from the [Releases](https://github.com/princedev-toptal/AutomatedGit/releases) page
+2. Run the installer (`Auto Git Setup X.X.X.exe`) or portable executable (`AutoGit-X.X.X-portable.exe`)
+3. **No Node.js installation required!** The app is self-contained.
+
+**For Developers:**
+```bash
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run electron
+
+# Build for Windows
+npm run build:win
+
+# Build for macOS
+npm run build:mac
+
+# Build for Linux
+npm run build:linux
+```
+
+See [BUILD.md](BUILD.md) for detailed build instructions.
+
+### Option 2: Web Application
+
+1. Install Node.js (v14 or higher): https://nodejs.org/
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-## Usage
-
-1. Start the server:
+3. Start the server:
 ```bash
 npm start
 ```
 
-2. Open your browser and navigate to `http://localhost:3000`
+4. Open your browser and navigate to `http://localhost:3000`
 
-3. Fill in the form:
-   - **Start Date**: First date to process
-   - **End Date**: Last date to process
-   - **Country**: Select your country to exclude its holidays (Sundays are always excluded)
-   - **Commit Percentage**: Percentage of available dates to commit (0-100). Example: 50 means commit for 50% of available dates
-   - **Repository Path**: Path to your git repository (will be created if it doesn't exist)
-   - **Remote Name**: Git remote name (default: origin)
+## 💻 Usage
 
-4. Click "Start Processing" and wait for the results
+### Desktop Application
 
-## How It Works
+1. Launch the application (double-click the .exe file)
+2. The application window will open automatically
+3. Fill in the form with your settings (see below)
+4. Click "Start Processing" and monitor progress in real-time
+
+### Web Application
+
+1. Start the server: `npm start`
+2. Open `http://localhost:3000` in your browser
+3. Fill in the form and click "Start Processing"
+
+### Form Fields
+
+- **Start Date**: First date to process
+- **End Date**: Last date to process
+- **Number of Branches**: How many branches to create per date
+- **Total Commits**: Total number of commits to distribute across branches
+- **Country**: Select your country to exclude its holidays (Sundays are always excluded)
+- **Repository Path**: Path to your git repository (will be created if it doesn't exist)
+- **Remote URL**: Git remote repository URL (e.g., `https://github.com/username/repo.git`)
+- **GitHub Token** (Optional): Personal Access Token for PR operations, auto-follow, and auto-star
+- **Co-Authors** (Optional): Comma or space-separated list of co-author emails
+  - Format: `email1@example.com, email2@example.com` or `Name <email@example.com>`
+- **Co-Author Rate** (%): Percentage of commits that will include co-authors (0-100)
+- **Create PR**: Automatically create Pull Requests for each branch
+- **Auto Merge**: Automatically merge PRs after creation
+- **Base Branch**: Target branch for PRs (default: `main`)
+
+### How It Works
 
 1. The program calculates all valid dates between start and end dates (excluding Sundays and holidays)
-2. Based on the percentage you specify, it randomly selects that percentage of available dates
-3. For each selected date:
-   - Creates a branch named `auto-YYYY-MM-DD`
-   - Creates 1 commit
-   - Pushes the branch to the remote repository
+2. For each valid date:
+   - Creates the specified number of branches (e.g., `auto-YYYY-MM-DD-1`, `auto-YYYY-MM-DD-2`)
+   - Distributes commits across branches
+   - Optionally adds co-authors to commits based on the co-author rate
+   - Pushes branches to the remote repository
+   - Optionally creates and merges Pull Requests
 
-**Example**: If there are 20 available dates and you set percentage to 50%, it will randomly select 10 dates and create commits for those 10 dates.
+**Example**: 
+- Start: 2024-01-01, End: 2024-01-31
+- 2 branches per date, 10 total commits
+- 50% co-author rate
+- Result: Creates 2 branches for each valid date, distributes 10 commits across them, adds co-authors to 50% of commits randomly
 
-## Holidays
+## 🌍 Holidays
 
 The program supports country-specific holidays. Select your country from the dropdown to exclude its holidays. Sundays are always excluded regardless of country selection.
 
@@ -105,16 +164,93 @@ The program supports country-specific holidays. Select your country from the dro
 
 You can modify the holidays list in `dateUtils.js` to add or remove holidays for any country.
 
-## Important Notes
+## 🔧 Requirements
 
-- Make sure you have git configured on your system
-- The repository will be initialized if it doesn't exist
-- You need to add a remote repository before pushing (e.g., `git remote add origin <url>`)
-- The program will skip dates that are Sundays or holidays automatically
+### For Desktop Application (End Users)
+- ✅ **Git** installed and configured (download from https://git-scm.com/)
+- ✅ **No Node.js required!** The app bundles everything it needs.
 
-## Requirements
-
-- Node.js (v12 or higher)
+### For Development/Web Application
+- Node.js (v14 or higher)
 - Git installed and configured
-- Internet connection (for pushing to remote)
+- Internet connection (for pushing to remote and GitHub API operations)
 
+## 📝 Important Notes
+
+- **Git Configuration**: Make sure you have git configured on your system (`git config --global user.name` and `git config --global user.email`)
+- **Repository Setup**: The repository will be initialized if it doesn't exist. You need to add a remote repository before pushing (e.g., `git remote add origin <url>`)
+- **GitHub Token**: For PR operations, auto-follow, and auto-star features, you need a GitHub Personal Access Token with these scopes:
+  - `repo` (for PR operations)
+  - `public_repo` (for starring repositories)
+  - `user:follow` (for following users)
+- **Co-Authors**: Co-authors are randomly selected for commits based on the co-author rate. Each commit can have either one random co-author or all co-authors.
+- **Date Exclusion**: The program automatically skips dates that are Sundays or holidays based on your selected country
+- **Port**: The desktop application runs a local server internally (default: port 3000). You don't need to open a browser - the Electron window displays the UI.
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+auto-git/
+├── main.js              # Electron main process
+├── server.js            # Express server and API endpoints
+├── gitOperations.js     # Git operations (clone, commit, push)
+├── prOperations.js      # GitHub API operations (PRs, follow, star)
+├── dateUtils.js         # Date utilities and holiday calculations
+├── public/
+│   └── index.html       # Web UI
+├── package.json         # Dependencies and scripts
+└── BUILD.md            # Detailed build instructions
+```
+
+### Available Scripts
+
+```bash
+# Web application
+npm start                 # Start web server
+
+# Desktop application (development)
+npm run electron          # Run Electron app
+npm run electron:dev      # Run with DevTools open
+
+# Build executables
+npm run build:win         # Build Windows .exe
+npm run build:mac         # Build macOS .dmg
+npm run build:linux       # Build Linux packages
+npm run build             # Build for current platform
+```
+
+## 🐛 Troubleshooting
+
+### Desktop Application Issues
+
+- **App won't start**: Ensure Git is installed and available in system PATH
+- **Build errors**: See [BUILD.md](BUILD.md) for detailed troubleshooting
+- **Port already in use**: The app will automatically find an available port
+
+### Web Application Issues
+
+- **Port 3000 in use**: Change the port by setting `PORT` environment variable
+- **Git operations fail**: Ensure Git is properly configured and the repository path is correct
+- **GitHub API errors**: Verify your GitHub token has the required scopes
+
+## 📄 License
+
+MIT
+
+## 🙏 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## ⭐ Support
+
+If you find this project useful, please consider:
+- ⭐ Starring the repository
+- 🐛 Reporting bugs
+- 💡 Suggesting new features
+- 📖 Improving documentation
+
+---
+
+**Made with ❤️ by [princedev-toptal](https://github.com/princedev-toptal)**
