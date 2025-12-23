@@ -9,7 +9,7 @@ const { initGit, processDate, getCommitHistory } = require('./gitOperations');
 const { followAndStar } = require('./prOperations');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
@@ -198,6 +198,10 @@ app.post('/api/check', async (req, res) => {
     const path = require('path');
     const fs = require('fs');
     
+    // Use /tmp directory on Vercel (only writable location), otherwise use process.cwd()
+    const isVercel = process.env.VERCEL || process.env.NOW_REGION;
+    const baseDir = isVercel ? '/tmp' : process.cwd();
+    
     let actualRepoPath = repoPath;
     let isUrl = false;
     
@@ -205,7 +209,7 @@ app.post('/api/check', async (req, res) => {
     if (isRepoUrl(repoPath)) {
       isUrl = true;
       const repoName = extractRepoName(repoPath);
-      actualRepoPath = path.join(process.cwd(), repoName);
+      actualRepoPath = path.join(baseDir, repoName);
     }
     
     // Initialize/clone repository if needed (this will clone if URL, or init if local)
@@ -229,15 +233,19 @@ app.post('/api/check', async (req, res) => {
       console.log(`[CHECK] Repository exists: ${gitRepoInfo.exists}, Is repo: ${gitRepoInfo.isRepo}`);
       
       // Get git user name and email (try global first, then local)
-      const simpleGit = require('simple-git');
-      const globalGit = simpleGit();
-      
+      // On Vercel, git might not be available, so handle gracefully
       try {
+        const simpleGit = require('simple-git');
+        const globalGit = simpleGit();
         gitUser.name = (await globalGit.getConfig('user.name')).value || 'Not configured';
         gitUser.email = (await globalGit.getConfig('user.email')).value || 'Not configured';
       } catch (e) {
+        // Git not available (e.g., on Vercel) - use defaults
         gitUser.name = 'Not configured';
         gitUser.email = 'Not configured';
+        if (isVercel) {
+          console.log(`[${requestId}] [CHECK] Git not available on Vercel - using defaults`);
+        }
       }
       
       // Get existing commit history for the date range
@@ -431,6 +439,8 @@ app.get('/api/process-stream', async (req, res) => {
       repoPath, 
       remote, 
       country,
+      coAuthors,
+      coAuthorRate,
       createPR,
       autoMerge,
       prToken,
@@ -440,6 +450,13 @@ app.get('/api/process-stream', async (req, res) => {
     } = formData;
     
     sendSSE(res, 'progress', { message: `🚀 Starting processing for ${startDate} to ${endDate}...`, level: 'info' });
+    
+    // Log co-author settings for debugging
+    if (coAuthors && coAuthors.length > 0) {
+      console.log(`[${requestId}] [PROCESS-STREAM] Co-authors: ${coAuthors.join(', ')}, Rate: ${coAuthorRate}%`);
+    } else {
+      console.log(`[${requestId}] [PROCESS-STREAM] No co-authors provided`);
+    }
     
     // Validate inputs
     if (!startDate || !endDate || numBranches === undefined || totalCommits === undefined || !repoPath) {
@@ -577,7 +594,7 @@ app.get('/api/process-stream', async (req, res) => {
       
       try {
         const startTime = Date.now();
-        const result = await processDate(git, date, commitsForThisBranch, remote || 'origin', prOptions, actualRepoPath);
+        const result = await processDate(git, date, commitsForThisBranch, remote || 'origin', prOptions, actualRepoPath, coAuthors || [], coAuthorRate || 0);
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
         
         results.push(result);
@@ -733,6 +750,8 @@ app.post('/api/process', async (req, res) => {
       repoPath, 
       remote, 
       country,
+      coAuthors,
+      coAuthorRate,
       createPR,
       autoMerge,
       prToken,
@@ -859,7 +878,7 @@ app.post('/api/process', async (req, res) => {
       
       try {
         const startTime = Date.now();
-        const result = await processDate(git, date, commitsForThisBranch, remote || 'origin', prOptions, actualRepoPath);
+        const result = await processDate(git, date, commitsForThisBranch, remote || 'origin', prOptions, actualRepoPath, coAuthors || [], coAuthorRate || 0);
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
         
         results.push(result);
@@ -971,13 +990,18 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`========================================`);
-  console.log(`Auto-Git server running at http://localhost:${PORT}`);
-  console.log(`Open your browser and navigate to the URL above to use the interface.`);
-  console.log(`========================================`);
-  console.log(`Server started at ${new Date().toISOString()}`);
-  console.log(`Ready to accept requests...`);
-});
+// Start server (only if not in Vercel serverless environment)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`========================================`);
+    console.log(`Auto-Git server running at http://localhost:${PORT}`);
+    console.log(`Open your browser and navigate to the URL above to use the interface.`);
+    console.log(`========================================`);
+    console.log(`Server started at ${new Date().toISOString()}`);
+    console.log(`Ready to accept requests...`);
+  });
+}
+
+// Export for Vercel serverless
+module.exports = app;
 

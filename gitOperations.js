@@ -5,6 +5,19 @@
 const simpleGit = require('simple-git');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
+
+/**
+ * Check if git is available on the system
+ */
+function isGitAvailable() {
+  try {
+    execSync('git --version', { stdio: 'ignore' });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 /**
  * Check if a string is a GitHub/GitLab/Bitbucket URL
@@ -73,14 +86,28 @@ async function cloneRepository(repoUrl, localPath) {
  * @returns {Promise<Object>} - Git instance and actual local path
  */
 async function initGit(repoPath) {
+  // Check if git is available
+  if (!isGitAvailable()) {
+    const isVercel = process.env.VERCEL || process.env.NOW_REGION;
+    if (isVercel) {
+      throw new Error('Git is not available on Vercel serverless functions. This app requires Git to be installed. Please deploy to a platform that supports Git (e.g., Railway, Render, or a VPS).');
+    } else {
+      throw new Error('Git is not installed on this system. Please install Git to use this application.');
+    }
+  }
+  
   let actualPath = repoPath;
   let cloned = false;
+  
+  // Use /tmp directory on Vercel (only writable location), otherwise use process.cwd()
+  const isVercel = process.env.VERCEL || process.env.NOW_REGION;
+  const baseDir = isVercel ? '/tmp' : process.cwd();
   
   // If it's a URL, clone it first
   if (isRepoUrl(repoPath)) {
     const repoName = extractRepoName(repoPath);
     // Use a local directory name based on repo name
-    actualPath = path.join(process.cwd(), repoName);
+    actualPath = path.join(baseDir, repoName);
     
     // Check if already cloned
     let needsClone = true;
@@ -248,14 +275,66 @@ async function createBranch(git, branchName, remote = 'origin', forcePush = fals
 }
 
 /**
+ * Randomly select co-authors from the list (either one or multiple)
+ * @param {Array<string>} coAuthors - Array of all co-author emails
+ * @returns {Array<string>} - Randomly selected co-authors (either 1 or multiple)
+ */
+function getRandomCoAuthors(coAuthors) {
+  if (!coAuthors || coAuthors.length === 0) {
+    return [];
+  }
+  
+  // Randomly decide: use one co-author OR use all co-authors
+  const useSingle = Math.random() < 0.5; // 50% chance for single, 50% for multiple
+  
+  if (useSingle || coAuthors.length === 1) {
+    // Use only one random co-author
+    const randomIndex = Math.floor(Math.random() * coAuthors.length);
+    return [coAuthors[randomIndex]];
+  } else {
+    // Use all co-authors (plural)
+    return [...coAuthors];
+  }
+}
+
+/**
+ * Parse co-author emails and format as Git trailers
+ * @param {Array<string>} coAuthors - Array of email addresses or "Name <email>" format
+ * @returns {string} - Formatted co-author trailers for commit message
+ */
+function formatCoAuthors(coAuthors) {
+  if (!coAuthors || coAuthors.length === 0) {
+    return '';
+  }
+  
+  const trailers = coAuthors.map(coAuthor => {
+    // Check if format is "Name <email>" or just "email"
+    const nameEmailMatch = coAuthor.match(/^(.+?)\s*<(.+?)>$/);
+    if (nameEmailMatch) {
+      const name = nameEmailMatch[1].trim();
+      const email = nameEmailMatch[2].trim();
+      return `Co-authored-by: ${name} <${email}>`;
+    } else {
+      // Just email, use email as name
+      const email = coAuthor.trim();
+      return `Co-authored-by: ${email} <${email}>`;
+    }
+  });
+  
+  return '\n\n' + trailers.join('\n');
+}
+
+/**
  * Create commits on the current branch
  * @param {Object} git - Git instance
  * @param {number} commitCount - Number of commits to create
  * @param {string} date - Date string (YYYY-MM-DD)
  * @param {string} repoPath - Repository path (optional, will try to get from git instance if not provided)
+ * @param {Array<string>} coAuthors - Array of co-author emails (optional)
+ * @param {number} coAuthorRate - Percentage of commits that should include co-authors (0-100, default: 0)
  * @returns {Promise<Object>}
  */
-async function createCommits(git, commitCount, date, repoPath = null) {
+async function createCommits(git, commitCount, date, repoPath = null, coAuthors = [], coAuthorRate = 0) {
   const results = [];
   
   try {
@@ -292,6 +371,28 @@ async function createCommits(git, commitCount, date, repoPath = null) {
     
     console.log(`[COMMIT] Creating ${commitCount} commit(s) for date: ${date} (parsed as: ${commitDate.toISOString()})`);
     
+    // Determine which commits should have co-authors based on rate
+    const commitsWithCoAuthors = new Set();
+    console.log(`[COMMIT] Co-author settings: coAuthors=${coAuthors ? coAuthors.length : 0}, coAuthorRate=${coAuthorRate}%`);
+    
+    if (coAuthors && coAuthors.length > 0 && coAuthorRate > 0) {
+      const numCommitsWithCoAuthors = Math.round((commitCount * coAuthorRate) / 100);
+      // Ensure at least 1 commit gets co-authors if rate > 0 and we have commits
+      const actualNumCommits = numCommitsWithCoAuthors > 0 ? numCommitsWithCoAuthors : (commitCount > 0 && coAuthorRate > 0 ? 1 : 0);
+      
+      // Randomly select commits to include co-authors
+      const indices = Array.from({ length: commitCount }, (_, i) => i);
+      // Shuffle and take first N
+      indices.sort(() => Math.random() - 0.5);
+      for (let i = 0; i < actualNumCommits && i < indices.length; i++) {
+        commitsWithCoAuthors.add(indices[i]);
+      }
+      console.log(`[COMMIT] ${actualNumCommits} out of ${commitCount} commits will include co-authors (${coAuthorRate}%)`);
+      console.log(`[COMMIT] Selected commit indices: ${Array.from(commitsWithCoAuthors).sort((a, b) => a - b).join(', ')}`);
+    } else {
+      console.log(`[COMMIT] No co-authors will be added (coAuthors: ${coAuthors ? coAuthors.length : 0}, rate: ${coAuthorRate}%)`);
+    }
+
     for (let i = 0; i < commitCount; i++) {
       // Append a line to the file
       const timestamp = commitDate.toISOString();
@@ -302,16 +403,37 @@ async function createCommits(git, commitCount, date, repoPath = null) {
       await git.add(fileName);
       
       // Commit with the specific date (not current date!)
-      const commitMessage = `Auto commit ${i + 1} for ${date}`;
+      let commitMessage = `Auto commit ${i + 1} for ${date}`;
+      
+      // Add co-author trailers only if this commit is selected (based on rate)
+      // Randomly select co-authors for this commit
+      let selectedCoAuthors = [];
+      if (commitsWithCoAuthors.has(i) && coAuthors && coAuthors.length > 0) {
+        selectedCoAuthors = getRandomCoAuthors(coAuthors);
+        if (selectedCoAuthors.length > 0) {
+          const coAuthorTrailers = formatCoAuthors(selectedCoAuthors);
+          commitMessage += coAuthorTrailers;
+          console.log(`[COMMIT] Adding co-authors to commit ${i + 1}: ${selectedCoAuthors.join(', ')}`);
+        }
+      }
+      
       const commitDateISO = commitDate.toISOString();
       
       console.log(`[COMMIT] Creating commit ${i + 1}/${commitCount} with date: ${commitDateISO}`);
+      if (selectedCoAuthors.length > 0) {
+        console.log(`[COMMIT] Commit message includes co-authors: ${selectedCoAuthors.join(', ')}`);
+      }
+      
+      // Log the full commit message before committing (for debugging)
+      if (selectedCoAuthors.length > 0) {
+        console.log(`[COMMIT] Full commit message with co-authors:\n${commitMessage}`);
+      }
       
       await git.commit(commitMessage, {
         '--date': commitDateISO
       });
       
-      // Verify commit was created with correct date
+      // Verify commit was created with correct date and check if co-authors are in the message
       const logResult = await git.log(['-1']);
       let commitInfo = {
         hash: null,
@@ -326,6 +448,24 @@ async function createCommits(git, commitCount, date, repoPath = null) {
         const commitDateStr = new Date(logResult.latest.date).toISOString().split('T')[0];
         commitInfo.actualDate = commitDateStr;
         console.log(`[COMMIT] ✅ Commit created: ${commitInfo.hash} - Date: ${commitDateStr} (Expected: ${date})`);
+        
+        // Verify co-authors are in the commit message
+        if (selectedCoAuthors.length > 0) {
+          const actualCommitMessage = logResult.latest.message || '';
+          console.log(`[COMMIT] Actual commit message (first 200 chars): ${actualCommitMessage.substring(0, 200)}`);
+          if (actualCommitMessage.includes('Co-authored-by:')) {
+            console.log(`[COMMIT] ✅ Co-authors confirmed in commit message`);
+            // Extract co-authors from message
+            const coAuthorMatches = actualCommitMessage.match(/Co-authored-by:.*/g);
+            if (coAuthorMatches) {
+              console.log(`[COMMIT] Found co-author trailers: ${coAuthorMatches.join(', ')}`);
+            }
+          } else {
+            console.warn(`[COMMIT] ⚠️ Warning: Co-authors not found in commit message!`);
+            console.warn(`[COMMIT] Expected co-authors: ${selectedCoAuthors.join(', ')}`);
+            console.warn(`[COMMIT] Full commit message:\n${actualCommitMessage}`);
+          }
+        }
         
         if (commitDateStr !== date) {
           console.warn(`[COMMIT] ⚠️ Warning: Commit date mismatch! Expected: ${date}, Got: ${commitDateStr}`);
@@ -1108,9 +1248,11 @@ async function getCommitHistory(git, startDate, endDate, branch = null) {
  * @param {string} remote - Remote name
  * @param {Object} prOptions - PR options (createPR, autoMerge, token, baseBranch, platform)
  * @param {string} repoPath - Repository path
+ * @param {Array<string>} coAuthors - Array of co-author emails (optional)
+ * @param {number} coAuthorRate - Percentage of commits that should include co-authors (0-100, default: 0)
  * @returns {Promise<Object>}
  */
-async function processDate(git, date, commitCount, remote = 'origin', prOptions = null, repoPath = null) {
+async function processDate(git, date, commitCount, remote = 'origin', prOptions = null, repoPath = null, coAuthors = [], coAuthorRate = 0) {
   const dateStr = require('./dateUtils').formatDate(date);
   const branchName = `auto-${dateStr}`;
   
@@ -1174,8 +1316,8 @@ async function processDate(git, date, commitCount, remote = 'origin', prOptions 
       return { success: false, results, message: `Failed to create branch: ${branchResult.message}` };
     }
     
-    // Create commits (pass repoPath if available)
-    const commitResult = await createCommits(git, commitCount, dateStr, repoPath);
+    // Create commits (pass repoPath, coAuthors, and coAuthorRate if available)
+    const commitResult = await createCommits(git, commitCount, dateStr, repoPath, coAuthors, coAuthorRate);
     results.commits = commitResult;
     
     if (!commitResult.success) {

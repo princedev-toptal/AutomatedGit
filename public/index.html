@@ -325,6 +325,47 @@
             font-family: inherit;
         }
 
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            background: #e1e4e8;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+
+        input[type="range"]:hover::-moz-range-thumb {
+            transform: scale(1.1);
+        }
+
         input:hover, select:hover {
             border-color: #c6cbd1;
         }
@@ -940,6 +981,26 @@
                 </div>
 
                 <div class="form-group full-width">
+                    <label for="coAuthors">Co-Authors (Optional)</label>
+                    <input type="text" id="coAuthors" name="coAuthors" placeholder="email1@example.com, email2@example.com or Name &lt;email@example.com&gt;">
+                    <div class="help-text">
+                        Add co-authors to commits. Separate multiple emails with commas or spaces.
+                        <br>Format: <code>email@example.com</code> or <code>Name &lt;email@example.com&gt;</code>
+                        <br>Example: <code>john@example.com, jane@example.com</code> or <code>john@example.com jane@example.com</code>
+                    </div>
+                </div>
+
+                <div class="form-group" id="coAuthorRateGroup" style="display: none;">
+                    <label for="coAuthorRate">Co-Author Rate</label>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <input type="range" id="coAuthorRate" name="coAuthorRate" min="0" max="100" step="1" value="30" style="flex: 1;">
+                        <input type="number" id="coAuthorRateDisplay" min="0" max="100" step="1" value="30" style="width: 80px; padding: 10px 14px;">
+                        <span style="font-weight: 600; color: #24292e; min-width: 30px;">%</span>
+                    </div>
+                    <div class="help-text">Percentage of commits that will include co-authors (0-100%)</div>
+                </div>
+
+                <div class="form-group full-width">
                     <label>
                         <input type="checkbox" id="createPR" name="createPR" style="width: auto; margin-right: 8px;">
                         Create Pull Requests
@@ -1218,6 +1279,39 @@
             });
         }
 
+        // Show/hide co-author rate field when co-authors are entered
+        const coAuthorsInput = document.getElementById('coAuthors');
+        const coAuthorRateGroup = document.getElementById('coAuthorRateGroup');
+        const coAuthorRateSlider = document.getElementById('coAuthorRate');
+        const coAuthorRateDisplay = document.getElementById('coAuthorRateDisplay');
+        
+        if (coAuthorsInput && coAuthorRateGroup) {
+            coAuthorsInput.addEventListener('input', () => {
+                const hasCoAuthors = coAuthorsInput.value.trim().length > 0;
+                coAuthorRateGroup.style.display = hasCoAuthors ? 'block' : 'none';
+            });
+            
+            // Check on page load
+            if (coAuthorsInput.value.trim().length > 0) {
+                coAuthorRateGroup.style.display = 'block';
+            }
+        }
+
+        // Sync slider and number input for co-author rate
+        if (coAuthorRateSlider && coAuthorRateDisplay) {
+            coAuthorRateSlider.addEventListener('input', () => {
+                coAuthorRateDisplay.value = coAuthorRateSlider.value;
+            });
+            
+            coAuthorRateDisplay.addEventListener('input', () => {
+                let value = parseInt(coAuthorRateDisplay.value) || 0;
+                if (value < 0) value = 0;
+                if (value > 100) value = 100;
+                coAuthorRateDisplay.value = value;
+                coAuthorRateSlider.value = value;
+            });
+        }
+
         if (autoMergeCheckbox) {
             autoMergeCheckbox.addEventListener('change', () => {
                 mergeMethodGroup.style.display = autoMergeCheckbox.checked ? 'block' : 'none';
@@ -1233,6 +1327,22 @@
             }
 
             // Get form data
+            // Parse co-authors
+            const coAuthorsInput = document.getElementById('coAuthors').value.trim();
+            let coAuthors = [];
+            if (coAuthorsInput) {
+                // Split by comma or space, then clean up
+                coAuthors = coAuthorsInput
+                    .split(/[,\s]+/)
+                    .map(email => email.trim())
+                    .filter(email => email.length > 0);
+            }
+
+            // Get co-author rate (percentage) - use slider value
+            const coAuthorRate = coAuthors.length > 0 
+                ? parseFloat(coAuthorRateSlider ? coAuthorRateSlider.value : document.getElementById('coAuthorRate').value) || 30 
+                : 0;
+
             const formData = {
                 startDate: document.getElementById('startDate').value,
                 endDate: document.getElementById('endDate').value,
@@ -1241,6 +1351,8 @@
                 totalCommits: parseInt(document.getElementById('totalCommits').value),
                 repoPath: document.getElementById('repoPath').value,
                 remote: document.getElementById('remote').value || 'origin',
+                coAuthors: coAuthors,
+                coAuthorRate: coAuthorRate,
                 createPR: document.getElementById('createPR').checked,
                 autoMerge: document.getElementById('autoMerge').checked,
                 prToken: document.getElementById('prToken').value,
